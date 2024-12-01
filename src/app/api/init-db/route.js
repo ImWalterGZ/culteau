@@ -8,18 +8,23 @@ export async function GET() {
     const initialData = {
       environment1: {
         settings: {
-          name: "Main Garden",
+          name: "Jardin de la casa",
           type: "Templado",
           optimal_moisture: 60,
           optimal_temperature: 22,
           optimal_humidity: 45,
         },
         current_readings: {
-          status_motor: true,
+          status_motor: false,
           moisture: 55,
           temperature: 23,
-          humidity: 48,
-          battery_level: 100,
+          humidity: {
+            hum1: 53,
+            hum2: 50,
+            hum3: 51,
+            hum4: 54,
+          },
+          ph: 6,
           last_updated: new Date().toISOString(),
         },
         watering_events: {
@@ -28,6 +33,18 @@ export async function GET() {
             duration: 30,
             status: "completed",
           },
+        },
+        timestamp_anterior: {
+          day: 0,
+          hour: 0,
+          minute: 0,
+          year: 0,
+        },
+        timestamp_futuro: {
+          day: 0,
+          hour: 0,
+          minute: 0,
+          year: 0,
         },
       },
     };

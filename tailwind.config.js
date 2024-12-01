@@ -12,8 +12,8 @@ module.exports = {
         foreground: "var(--foreground)",
       },
       fontFamily: {
-        josefin: ["var(--font-josefin)"],
-        sans: ["var(--font-josefin)"],
+        lexend: ["var(--font-lexend-deca)"],
+        sans: ["var(--font-lexend-deca)"],
       },
     },
   },

@@ -1,11 +1,11 @@
 import localFont from "next/font/local";
 import "./globals.css";
-import { Josefin_Sans } from "next/font/google";
+import { Lexend_Deca } from "next/font/google";
 
-const josefinSans = Josefin_Sans({
+const lexendDeca = Lexend_Deca({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-josefin",
+  variable: "--font-lexend-deca",
   weight: ["300", "400", "500", "600", "700"],
 });
 
@@ -27,8 +27,8 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${josefinSans.variable}`}>
-      <body className="font-josefin">{children}</body>
+    <html lang="en" className={`${lexendDeca.variable}`}>
+      <body className="font-lexend-deca">{children}</body>
     </html>
   );
 }
