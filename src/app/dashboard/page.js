@@ -1,4 +1,9 @@
-import NavbarMinimal from "../Components/NavbarMinimal";
+import SensorDashboard from "./components/SensorDashboard";
+
 export default function Page() {
-  return <div className="bg-background h-full w-full"></div>;
+  return (
+    <div className="bg-background h-full w-full">
+      <SensorDashboard />
+    </div>
+  );
 }
