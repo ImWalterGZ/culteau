@@ -1,12 +1,32 @@
 "use client";
 import { useState, useEffect } from "react";
+import { database } from "@/lib/firebase";
+import { ref, onValue } from "firebase/database";
 
 export default function WateringHistory() {
   const [wateringEvents, setWateringEvents] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Will implement new data fetching here
+    const wateringRef = ref(database, "environment1/watering_events");
+
+    const unsubscribe = onValue(wateringRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const events = [];
+        snapshot.forEach((childSnapshot) => {
+          events.push({
+            id: childSnapshot.key,
+            ...childSnapshot.val(),
+          });
+        });
+        setWateringEvents(events.reverse()); // Most recent first
+      } else {
+        setWateringEvents([]);
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   if (loading) {
@@ -21,13 +41,13 @@ export default function WateringHistory() {
 
       {wateringEvents.length > 0 ? (
         <div className="space-y-4">
-          {wateringEvents.map((event, index) => (
+          {wateringEvents.map((event) => (
             <div
-              key={index}
+              key={event.id}
               className="flex justify-between items-center border-b border-gray-100 pb-2"
             >
               <div>
-                <p className="font-medium">Device: {event.device_id}</p>
+                <p className="font-medium">Device: ESP32_1</p>
                 <p className="text-sm text-gray-500">
                   Duration: {event.duration} seconds
                 </p>

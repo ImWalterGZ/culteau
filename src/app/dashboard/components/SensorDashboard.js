@@ -2,16 +2,44 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { database } from "@/lib/firebase";
+import { ref, onValue } from "firebase/database";
 import SensorCard from "./SensorCard";
 import WateringHistory from "./WateringHistory";
 
 export default function SensorDashboard() {
   const [sensorData, setSensorData] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Temporary removed data fetching
   useEffect(() => {
-    // Will implement new data fetching here
+    // Reference to the current readings in Firebase
+    const sensorRef = ref(database, "environment1/current_readings");
+
+    // Set up real-time listener
+    const unsubscribe = onValue(sensorRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        // Convert the data to the format expected by SensorCard
+        const formattedData = [
+          {
+            device_id: "ESP32_1",
+            timestamp: data.last_updated,
+            moisture: data.moisture,
+            temperature: data.temperature,
+            humidity: data.humidity,
+            battery_level: data.battery_level || 100,
+          },
+        ];
+
+        setSensorData(formattedData);
+      } else {
+        setSensorData([]);
+      }
+      setLoading(false);
+    });
+
+    // Cleanup subscription
+    return () => unsubscribe();
   }, []);
 
   if (loading) {

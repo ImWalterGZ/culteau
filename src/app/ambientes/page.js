@@ -1,47 +1,68 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { database } from "@/lib/firebase";
+import { ref, onValue } from "firebase/database";
 
 export default function Ambientes() {
   const [ambientes, setAmbientes] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const cargarAmbientes = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch('/api/ambientes');
-        if (!response.ok) throw new Error('Error al cargar ambientes');
-        
-        const data = await response.json();
-        console.log("Ambientes cargados:", data);
-        setAmbientes(data);
-      } catch (error) {
-        console.error("Error al cargar ambientes:", error);
-      } finally {
+    // Reference to environment1 in Firebase
+    const environmentRef = ref(database, "environment1");
+    console.log("Fetching data from Firebase...");
+
+    const unsubscribe = onValue(
+      environmentRef,
+      (snapshot) => {
+        console.log("Received Firebase data:", snapshot.val());
+        if (snapshot.exists()) {
+          const envData = snapshot.val();
+          const currentReadings = envData.current_readings || {};
+          const settings = envData.settings || {};
+
+          // Format the environment data
+          const formattedEnvironment = {
+            id: "environment1",
+            nombre: settings.name || "Main Garden",
+            tipo: settings.type || "Templado",
+            humedad: currentReadings.humidity || 0,
+            temperatura: currentReadings.temperature || 0,
+            fechaCreacion:
+              currentReadings.last_updated || new Date().toISOString(),
+            moisture: currentReadings.moisture || 0,
+            battery_level: currentReadings.battery_level || 100,
+          };
+
+          console.log("Formatted environment:", formattedEnvironment);
+          setAmbientes([formattedEnvironment]);
+        } else {
+          console.log("No data exists in Firebase");
+          setAmbientes([]);
+        }
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Firebase error:", error);
         setLoading(false);
       }
-    };
+    );
 
-    cargarAmbientes();
+    return () => unsubscribe();
   }, []);
 
   const eliminarAmbiente = async (id, e) => {
     e.preventDefault();
-    if (!confirm('¿Está seguro que desea eliminar este ambiente?')) {
+    if (!confirm("¿Está seguro que desea eliminar este ambiente?")) {
       return;
     }
 
     try {
-      const response = await fetch(`/api/ambientes/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        setAmbientes(ambientes.filter(a => a.id !== id));
-      } else {
-        throw new Error('Error al eliminar');
-      }
+      // For now, we'll just show an alert since we probably don't want to delete the main environment
+      alert(
+        "This environment cannot be deleted as it's the main monitoring environment."
+      );
     } catch (error) {
       console.error("Error al eliminar ambiente:", error);
       alert("Error al eliminar el ambiente");
@@ -54,17 +75,42 @@ export default function Ambientes() {
       <nav className="w-full bg-green-600 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
-            <Link 
-              href="/" 
+            <Link
+              href="/"
               className="text-2xl font-bold text-white hover:text-green-200 transition"
             >
               Culteau
             </Link>
             <ul className="flex space-x-8 text-white">
-              <li><Link href="/" className="hover:text-green-200 transition">Inicio</Link></li>
-              <li><Link href="/busqueda" className="hover:text-green-200 transition">Búsqueda</Link></li>
-              <li><Link href="/ambientes" className="hover:text-green-200 transition">Mis Ambientes</Link></li>
-              <li><Link href="/cuenta" className="hover:text-green-200 transition">Cuenta</Link></li>
+              <li>
+                <Link href="/" className="hover:text-green-200 transition">
+                  Inicio
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/busqueda"
+                  className="hover:text-green-200 transition"
+                >
+                  Búsqueda
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/ambientes"
+                  className="hover:text-green-200 transition"
+                >
+                  Mis Ambientes
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/cuenta"
+                  className="hover:text-green-200 transition"
+                >
+                  Cuenta
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
@@ -72,14 +118,12 @@ export default function Ambientes() {
 
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold text-green-800">
-            Mis Ambientes
-          </h1>
-          <Link 
-            href="/nuevo-ambiente"
+          <h1 className="text-4xl font-bold text-green-800">Mis Ambientes</h1>
+          <Link
+            href="/dashboard"
             className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300"
           >
-            Nuevo Ambiente
+            Ver Dashboard
           </Link>
         </div>
 
@@ -87,14 +131,14 @@ export default function Ambientes() {
           <div className="text-center text-gray-600">Cargando ambientes...</div>
         ) : ambientes.length === 0 ? (
           <div className="text-center text-gray-600">
-            No hay ambientes creados. ¡Crea tu primer ambiente!
+            No hay ambientes activos.
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {ambientes.map((ambiente) => (
               <div key={ambiente.id} className="relative">
-                <Link 
-                  href={`/ambiente/${ambiente.id}`}
+                <Link
+                  href={`/dashboard`}
                   className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition duration-300 block"
                 >
                   <div className="p-6">
@@ -117,21 +161,25 @@ export default function Ambientes() {
                           {ambiente.temperatura}°C
                         </p>
                       </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Moisture</p>
+                        <p className="text-lg font-semibold text-green-600">
+                          {ambiente.moisture}%
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Battery</p>
+                        <p className="text-lg font-semibold text-green-600">
+                          {ambiente.battery_level}%
+                        </p>
+                      </div>
                     </div>
                     <p className="text-xs text-gray-400 mt-4">
-                      Creado el: {new Date(ambiente.fechaCreacion).toLocaleDateString()}
+                      Última actualización:{" "}
+                      {new Date(ambiente.fechaCreacion).toLocaleString()}
                     </p>
                   </div>
                 </Link>
-                <button
-                  onClick={(e) => eliminarAmbiente(ambiente.id, e)}
-                  className="absolute top-2 right-2 p-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-full transition duration-300"
-                  title="Eliminar ambiente"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                </button>
               </div>
             ))}
           </div>
