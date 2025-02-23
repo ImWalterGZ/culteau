@@ -1,10 +1,44 @@
+"use client";
 import SensorDashboard from "./components/SensorDashboard";
 import Link from "next/link";
 import { getIdealConditions } from "./utils/environmentConditions";
+import { database } from "@/lib/firebase";
+import { ref, set, onValue } from "firebase/database";
+import { useState, useEffect } from "react";
 
 export default function Page() {
-  // We can get the environment type directly from the SensorDashboard component
+  const [motorStatus, setMotorStatus] = useState(false);
   const defaultConditions = getIdealConditions("Templado");
+
+  useEffect(() => {
+    // Listen to real-time changes in motor status
+    const motorRef = ref(
+      database,
+      "environment1/current_readings/status_motor"
+    );
+
+    const unsubscribe = onValue(motorRef, (snapshot) => {
+      if (snapshot.exists()) {
+        setMotorStatus(snapshot.val());
+      }
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, []);
+
+  const toggleMotor = async () => {
+    try {
+      const newStatus = !motorStatus;
+      await set(
+        ref(database, "environment1/current_readings/status_motor"),
+        newStatus
+      );
+      // No need to setMotorStatus here as it will be updated by the onValue listener
+    } catch (error) {
+      console.error("Error toggling motor:", error);
+    }
+  };
 
   return (
     <div
@@ -56,12 +90,35 @@ export default function Page() {
         <div className="bg-white rounded-xl shadow-2xl p-8 h-full">
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-4xl font-bold text-green-800">Dashboard</h1>
-            <Link
-              href="/ambientes"
-              className="bg-cyan-700 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300"
-            >
-              Volver a Ambientes
-            </Link>
+
+            <div className="flex gap-4 items-center">
+              {/* Toggle Switch Button */}
+              <div className="flex items-center gap-3">
+                <span className="text-gray-700 font-medium">
+                  Sistema {motorStatus ? "Encendido" : "Apagado"}
+                </span>
+                <button
+                  onClick={toggleMotor}
+                  className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none"
+                  style={{
+                    backgroundColor: motorStatus ? "#22c55e" : "#94a3b8",
+                  }}
+                >
+                  <span
+                    className={`${
+                      motorStatus ? "translate-x-6" : "translate-x-1"
+                    } inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300`}
+                  />
+                </button>
+              </div>
+
+              <Link
+                href="/ambientes"
+                className="bg-cyan-700 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300"
+              >
+                Volver a Ambientes
+              </Link>
+            </div>
           </div>
 
           {/* Sensor Dashboard */}

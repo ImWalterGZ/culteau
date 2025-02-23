@@ -2,8 +2,9 @@
 import { useState, useEffect } from "react";
 import { database } from "@/lib/firebase";
 import { ref, onValue } from "firebase/database";
+import { ExclamationTriangleIcon } from "@heroicons/react/24/solid";
 
-export default function PhDisplay() {
+export default function PhDisplay({ sensorData, showWarning, phRanges }) {
   const [phData, setPhData] = useState({
     currentPh: 0,
     environmentType: "Templado",
@@ -46,11 +47,24 @@ export default function PhDisplay() {
     return phData.currentPh >= segmentValue ? "opacity-100" : "opacity-30";
   };
 
+  const isPHWarning = () => {
+    const phValue = phData.currentPh || 7.0;
+    return phValue < phRanges.optimal.low || phValue > phRanges.optimal.high;
+  };
+
   return (
-    <div className="flex flex-col text-center justify-center">
-      <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">
-        Nivel de pH
-      </h3>
+    <div className="flex flex-col items-center">
+      <div className="flex items-center justify-center gap-2 mb-4">
+        {showWarning && isPHWarning() && (
+          <div className="group relative">
+            <ExclamationTriangleIcon className="h-6 w-6 text-amber-500 cursor-help" />
+            <div className="absolute z-10 w-60 px-4 py-2 mt-2 -ml-2 text-sm bg-black text-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity duration-300">
+              Nivel de pH fuera del rango óptimo, agrega composta
+            </div>
+          </div>
+        )}
+        <h3 className="text-lg font-semibold text-gray-800">Nivel de pH</h3>
+      </div>
       <div className="flex flex-col items-center h-[272px] justify-center">
         <div className="flex items-center gap-4">
           {/* pH Scale */}
