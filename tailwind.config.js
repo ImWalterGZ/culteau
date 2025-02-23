@@ -10,6 +10,7 @@ module.exports = {
       colors: {
         background: "#C7E7C7",
         foreground: "var(--foreground)",
+        primary: "#CB5454",
       },
       fontFamily: {
         lexend: ["var(--font-lexend-deca)"],
